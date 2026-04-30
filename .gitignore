@@ -13,9 +13,14 @@ AGENTS.md
 .ai-context/
 .planning/
 .session-handoff.md
+.session-handoff-*.md
 .cursor/
+.codex/
 .superpowers/
+.planning/
 memory/
+handoffs/
+deferred-work.jsonl
 self-improvements-pending-*.jsonl
 AI-progress.json
 AI-tasks.json

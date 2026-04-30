@@ -1,6 +1,7 @@
 result
 result-*
 .direnv
+__pycache__/
 .envrc
 
 # AI context (local-only, never track)

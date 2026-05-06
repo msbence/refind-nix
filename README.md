@@ -1,13 +1,22 @@
 # refind-nix
 
+<!-- BEGIN generated:badges -->
 [![CI](https://github.com/Daaboulex/refind-nix/actions/workflows/ci.yml/badge.svg)](https://github.com/Daaboulex/refind-nix/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/Daaboulex/refind-nix)](./LICENSE)
-[![NixOS](https://img.shields.io/badge/NixOS-unstable-78C0E8?logo=nixos&logoColor=white)](https://nixos.org)
-[![Last commit](https://img.shields.io/github/last-commit/Daaboulex/refind-nix)](https://github.com/Daaboulex/refind-nix/commits)
-[![Stars](https://img.shields.io/github/stars/Daaboulex/refind-nix?style=flat)](https://github.com/Daaboulex/refind-nix/stargazers)
-[![Issues](https://img.shields.io/github/issues/Daaboulex/refind-nix)](https://github.com/Daaboulex/refind-nix/issues)
+[![NixOS unstable](https://img.shields.io/badge/NixOS-unstable-78C0E8?logo=nixos&logoColor=white)](https://nixos.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+<!-- END generated:badges -->
 
 Declarative rEFInd bootloader for NixOS — typed options, first-class theming, security validation.
+
+<!-- BEGIN generated:upstream -->
+## Upstream
+
+| | |
+|---|---|
+| **Project** | Original code (no upstream) |
+| **License** | N/A |
+| **Tracked** | N/A |
+<!-- END generated:upstream -->
 
 ## Features
 
@@ -72,6 +81,15 @@ Security checks run automatically: PE binaries, oversized images, path traversal
 | `extraConfig` | lines | "" | Raw config lines |
 | `additionalFiles` | attrsOf path | {} | Extra files for ESP |
 
+<!-- BEGIN generated:options -->
+<!-- END generated:options -->
+
 ## License
 
 MIT
+
+<!-- BEGIN generated:footer -->
+---
+
+*Maintained as part of the [Daaboulex](https://github.com/Daaboulex) NixOS ecosystem.*
+<!-- END generated:footer -->

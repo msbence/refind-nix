@@ -280,12 +280,8 @@ def install_bootloader() -> None:
 
     # Build config file
     extra_config = str(config('extraConfig')).strip()
-    config_file = ""
 
-    if extra_config:
-        config_file += extra_config + '\n\n'
-
-    config_file += f'timeout {timeout}\n'
+    config_file = f'timeout {timeout}\n'
 
     banner_scale = config('bannerScale')
     if banner_scale:
@@ -324,6 +320,9 @@ def install_bootloader() -> None:
             config_file += generate_config_entry(profile, gen, True, group_name)
 
     config_file += '\n# NixOS boot entries end here\n'
+
+    if extra_config:
+        config_file += '\n\n' + extra_config
 
     config_file_path = os.path.join(refind_dir, 'refind.conf')
 

@@ -139,7 +139,7 @@ def config_entry(is_sub: bool, bootspec: BootSpec, label: str, time: str, is_lat
 
     entry += f'menuentry "{label}" {{\n'
 
-    icon_path = "themes/rEFInd-glassy/icons/"
+    icon_path = "/efi/refind/themes/rEFInd-glassy/icons/"
     icon_file = "os_nixos.png" if is_latest else "os_nixos_gray.png"
     entry += f'  icon {icon_path}{icon_file}\n'
     

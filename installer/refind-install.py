@@ -273,13 +273,8 @@ def install_bootloader() -> None:
 
     profiles = [('system', get_gens())]
 
-    for (profile, gens) in profiles:
-        group_name = 'default profile' if profile == 'system' else f"profile '{profile}'"
-
-        # Use enumerate to track the index
-        for i, gen in enumerate(sorted(gens, key=lambda x: x, reverse=True)):
-            is_latest = (i == 0)
-            config_file += generate_config_entry(profile, gen, True, group_name, is_latest)
+    for profile in get_profiles():
+        profiles += [(profile, get_gens(profile))]
 
     timeout = config('timeout')
 
@@ -326,8 +321,9 @@ def install_bootloader() -> None:
     for (profile, gens) in profiles:
         group_name = 'default profile' if profile == 'system' else f"profile '{profile}'"
 
-        for gen in sorted(gens, key=lambda x: x, reverse=True):
-            config_file += generate_config_entry(profile, gen, True, group_name)
+        for i, gen in enumerate(sorted(gens, key=lambda x: x, reverse=True)):
+            is_latest = (i == 0)
+            config_file += generate_config_entry(profile, gen, True, group_name, is_latest)
 
     config_file += '\n# NixOS boot entries end here\n'
 

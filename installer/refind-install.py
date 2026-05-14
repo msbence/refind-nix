@@ -213,7 +213,7 @@ def copy_file(from_path: str, to_path: str):
 
 def install_theme(theme_store_path: str) -> None:
     themes_dir = os.path.join(refind_dir, 'themes')
-    active_dir = os.path.join(themes_dir, 'rEFInd-minimal')
+    active_dir = os.path.join(themes_dir, 'rEFInd-glassy')
     active_new = os.path.join(themes_dir, 'active.new')
 
     if not os.path.exists(themes_dir):
@@ -309,7 +309,7 @@ def install_bootloader() -> None:
 
     # Theme include — after all options so theme.conf can set visual defaults
     if theme:
-        config_file += '\ninclude themes/rEFInd-minimal/theme.conf\n'
+        config_file += '\ninclude themes/rEFInd-glassy/theme.conf\n'
 
     config_file += '\n# NixOS boot entries start here\n'
 

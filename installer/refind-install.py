@@ -132,12 +132,17 @@ def bootjson_to_bootspec(bootjson: dict) -> BootSpec:
     )
 
 
-def config_entry(is_sub: bool, bootspec: BootSpec, label: str, time: str) -> str:
+def config_entry(is_sub: bool, bootspec: BootSpec, label: str, time: str, is_latest: bool) -> str:
     entry = ""
     if is_sub:
         entry += 'sub'
 
     entry += f'menuentry "{label}" {{\n'
+
+    icon_path = "themes/rEFInd-glassy/icons/"
+    icon_file = "os_nixos.png" if is_latest else "os_nixos_gray.png"
+    entry += f'  icon {icon_path}{icon_file}\n'
+    
     entry += '  loader ' + get_kernel_uri(bootspec.kernel) + '\n'
 
     if bootspec.initrd:
@@ -148,7 +153,7 @@ def config_entry(is_sub: bool, bootspec: BootSpec, label: str, time: str) -> str
     return entry
 
 
-def generate_config_entry(profile: str, gen: int, special: bool, group_name: str) -> str:
+def generate_config_entry(profile: str, gen: int, special: bool, group_name: str, is_latest: bool) -> str:
     time = datetime.datetime.fromtimestamp(os.stat(get_system_path(profile, gen), follow_symlinks=False).st_mtime).strftime("%F %H:%M:%S")
     boot_json_path = os.path.join(get_system_path(profile, gen), 'boot.json')
 
@@ -164,14 +169,14 @@ def generate_config_entry(profile: str, gen: int, special: bool, group_name: str
 
     if len(specialisation_list) > 0:
         entry += f'menuentry "NixOS {group_name} Generation {gen}" {{\n'
-        entry += config_entry(True, boot_spec, f'Default', str(time))
+        entry += config_entry(True, boot_spec, f'Default', str(time), is_latest)
 
         for spec, spec_boot_spec in specialisation_list:
-            entry += config_entry(True, spec_boot_spec, f'{spec}', str(time))
+            entry += config_entry(True, spec_boot_spec, f'{spec}', str(time), is_latest)
 
         entry += '}\n'
     else:
-        entry += config_entry(False, boot_spec, f'NixOS {group_name} Generation {gen}', str(time))
+        entry += config_entry(False, boot_spec, f'NixOS {group_name} Generation {gen}', str(time), is_latest)
     return entry
 
 
@@ -268,8 +273,13 @@ def install_bootloader() -> None:
 
     profiles = [('system', get_gens())]
 
-    for profile in get_profiles():
-        profiles += [(profile, get_gens(profile))]
+    for (profile, gens) in profiles:
+        group_name = 'default profile' if profile == 'system' else f"profile '{profile}'"
+
+        # Use enumerate to track the index
+        for i, gen in enumerate(sorted(gens, key=lambda x: x, reverse=True)):
+            is_latest = (i == 0)
+            config_file += generate_config_entry(profile, gen, True, group_name, is_latest)
 
     timeout = config('timeout')
 

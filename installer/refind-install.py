@@ -168,7 +168,7 @@ def generate_profile_block(profile: str, gens: List[int], group_name: str) -> st
         return ""
 
     # 2. The first valid generation becomes our main entry
-    latest_gen, latest_spec = valid_gens
+    latest_gen, latest_spec = valid_gens[0]
 
     block = f'menuentry "NixOS {group_name}" {{\n'
     icon_path = "/efi/refind/themes/rEFInd-glassy/icons/"

@@ -149,45 +149,48 @@ def generate_profile_block(profile: str, gens: List[int], group_name: str) -> st
     if not gens:
         return ""
 
-    # Sort newest to oldest
-    sorted_gens = sorted(gens, reverse=True)
-    latest_gen = sorted_gens
-
     def get_bootspec(gen: int) -> Optional[BootSpec]:
         boot_json_path = os.path.join(get_system_path(profile, gen), 'boot.json')
         if not os.path.exists(boot_json_path):
+            print(f"warning: generation {gen} has no boot.json, skipping")
             return None
         return bootjson_to_bootspec(json.load(open(boot_json_path, 'r')))
 
-    latest_spec = get_bootspec(latest_gen)
-    if not latest_spec:
+    # 1. Gather all VALID generations first, sorted newest to oldest
+    valid_gens = []
+    for gen in sorted(gens, reverse=True):
+        spec = get_bootspec(gen)
+        if spec:
+            valid_gens.append((gen, spec))
+
+    # If no valid generations exist at all, abort
+    if not valid_gens:
         return ""
 
-    # 1. Start the MAIN entry using the latest generation's kernel
+    # 2. The first valid generation becomes our main entry
+    latest_gen, latest_spec = valid_gens
+
     block = f'menuentry "NixOS {group_name}" {{\n'
-    block += f'  icon os_nixos.png\n'
+    icon_path = "/efi/refind/themes/rEFInd-glassy/icons/"
+    icon_file = "os_nixos.png"
+    block += f'  icon {icon_path}{icon_file}\n'
     block += '  loader ' + get_kernel_uri(latest_spec.kernel) + '\n'
     if latest_spec.initrd:
         block += '  initrd ' + get_kernel_uri(latest_spec.initrd) + '\n'
     block += '  options "' + ' '.join(['init=' + latest_spec.init] + latest_spec.kernelParams).strip() + '"\n\n'
 
-    # 2. Add submenus for specialisations of the latest generation
+    # Add submenus for specialisations of the main generation
     for spec_name, spec_bootspec in latest_spec.specialisations.items():
         block += config_entry(spec_bootspec, f'Latest - {spec_name}')
 
-    # 3. Add all older generations as submenus!
-    for older_gen in sorted_gens[1:]:
-        older_spec = get_bootspec(older_gen)
-        if not older_spec:
-            continue
-            
+    # 3. Add all older valid generations as submenus
+    for older_gen, older_spec in valid_gens[1:]:
         block += config_entry(older_spec, f'Generation {older_gen}')
 
         # Add submenus for specialisations of older generations
         for spec_name, spec_bootspec in older_spec.specialisations.items():
             block += config_entry(spec_bootspec, f'Gen {older_gen} - {spec_name}')
 
-    # 4. Close the main menu entry
     block += '}\n'
     return block
 

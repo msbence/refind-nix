@@ -132,17 +132,9 @@ def bootjson_to_bootspec(bootjson: dict) -> BootSpec:
     )
 
 
-def config_entry(is_sub: bool, bootspec: BootSpec, label: str, time: str, is_latest: bool) -> str:
-    entry = ""
-    if is_sub:
-        entry += 'sub'
-
-    entry += f'menuentry "{label}" {{\n'
-
-    icon_path = "/efi/refind/themes/rEFInd-glassy/icons/"
-    icon_file = "os_nixos.png" if is_latest else "os_nixos_gray.png"
-    entry += f'  icon {icon_path}{icon_file}\n'
-    
+def config_entry(bootspec: BootSpec, label: str) -> str:
+    # This helper now ONLY generates submenu entries
+    entry = f'submenuentry "{label}" {{\n'
     entry += '  loader ' + get_kernel_uri(bootspec.kernel) + '\n'
 
     if bootspec.initrd:
@@ -153,31 +145,51 @@ def config_entry(is_sub: bool, bootspec: BootSpec, label: str, time: str, is_lat
     return entry
 
 
-def generate_config_entry(profile: str, gen: int, special: bool, group_name: str, is_latest: bool) -> str:
-    time = datetime.datetime.fromtimestamp(os.stat(get_system_path(profile, gen), follow_symlinks=False).st_mtime).strftime("%F %H:%M:%S")
-    boot_json_path = os.path.join(get_system_path(profile, gen), 'boot.json')
-
-    if not os.path.exists(boot_json_path):
-        print(f"warning: generation {gen} has no boot.json, skipping")
+def generate_profile_block(profile: str, gens: List[int], group_name: str) -> str:
+    if not gens:
         return ""
 
-    boot_json = json.load(open(boot_json_path, 'r'))
-    boot_spec = bootjson_to_bootspec(boot_json)
+    # Sort newest to oldest
+    sorted_gens = sorted(gens, reverse=True)
+    latest_gen = sorted_gens
 
-    specialisation_list = boot_spec.specialisations.items()
-    entry = ""
+    def get_bootspec(gen: int) -> Optional[BootSpec]:
+        boot_json_path = os.path.join(get_system_path(profile, gen), 'boot.json')
+        if not os.path.exists(boot_json_path):
+            return None
+        return bootjson_to_bootspec(json.load(open(boot_json_path, 'r')))
 
-    if len(specialisation_list) > 0:
-        entry += f'menuentry "NixOS {group_name} Generation {gen}" {{\n'
-        entry += config_entry(True, boot_spec, f'Default', str(time), is_latest)
+    latest_spec = get_bootspec(latest_gen)
+    if not latest_spec:
+        return ""
 
-        for spec, spec_boot_spec in specialisation_list:
-            entry += config_entry(True, spec_boot_spec, f'{spec}', str(time), is_latest)
+    # 1. Start the MAIN entry using the latest generation's kernel
+    block = f'menuentry "NixOS {group_name}" {{\n'
+    block += f'  icon os_nixos.png\n'
+    block += '  loader ' + get_kernel_uri(latest_spec.kernel) + '\n'
+    if latest_spec.initrd:
+        block += '  initrd ' + get_kernel_uri(latest_spec.initrd) + '\n'
+    block += '  options "' + ' '.join(['init=' + latest_spec.init] + latest_spec.kernelParams).strip() + '"\n\n'
 
-        entry += '}\n'
-    else:
-        entry += config_entry(False, boot_spec, f'NixOS {group_name} Generation {gen}', str(time), is_latest)
-    return entry
+    # 2. Add submenus for specialisations of the latest generation
+    for spec_name, spec_bootspec in latest_spec.specialisations.items():
+        block += config_entry(spec_bootspec, f'Latest - {spec_name}')
+
+    # 3. Add all older generations as submenus!
+    for older_gen in sorted_gens[1:]:
+        older_spec = get_bootspec(older_gen)
+        if not older_spec:
+            continue
+            
+        block += config_entry(older_spec, f'Generation {older_gen}')
+
+        # Add submenus for specialisations of older generations
+        for spec_name, spec_bootspec in older_spec.specialisations.items():
+            block += config_entry(spec_bootspec, f'Gen {older_gen} - {spec_name}')
+
+    # 4. Close the main menu entry
+    block += '}\n'
+    return block
 
 
 def find_disk_device(part: str) -> str:
@@ -320,10 +332,9 @@ def install_bootloader() -> None:
 
     for (profile, gens) in profiles:
         group_name = 'default profile' if profile == 'system' else f"profile '{profile}'"
-
-        for i, gen in enumerate(sorted(gens, key=lambda x: x, reverse=True)):
-            is_latest = (i == 0)
-            config_file += generate_config_entry(profile, gen, True, group_name, is_latest)
+        
+        # We now pass all generations to the block builder at once
+        config_file += generate_profile_block(profile, gens, group_name)
 
     config_file += '\n# NixOS boot entries end here\n'
 
